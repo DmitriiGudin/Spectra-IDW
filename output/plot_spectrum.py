@@ -8,7 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
-wavelength_array = np.arange (3000, 10000+1)
+wavelength_array = np.arange (3000, 5000+1)
 
 
 def plot_stuff(f):
