@@ -5,6 +5,7 @@ from __future__ import division
 import numpy as np
 import h5py
 import IDW
+import Linear
 import params
 
 
@@ -33,22 +34,25 @@ def get_interpolated_spectrum (Teff, logg, FeH, CFe):
     T_EFF = f["/T_EFF"][:].flatten()
     LOG_G = f["/LOG_G"][:].flatten()
     FE_H = f["/FE_H"][:].flatten()
-    C_FE = f["/A_C"][:].flatten() - 8.43 - FE_H
+    C_FE = f["/A_C"][:].flatten()
     spectrum = f["/spectrum"][:]
     f.close()
     
-    good_indeces = []
-    for i in range(len(spectrum)):
-        if is_good(spectrum[i]):
-            good_indeces.append(i)
+    if params.remove_bad_spectra:
+        good_indeces = []
+        for i in range(len(spectrum)):
+            if is_good(spectrum[i]):
+                good_indeces.append(i)
+        T_EFF = T_EFF[good_indeces]
+        LOG_G = LOG_G[good_indeces]
+        FE_H = FE_H[good_indeces]
+        C_FE = C_FE[good_indeces]
+        spectrum = spectrum[good_indeces]
 
-    T_EFF = T_EFF[good_indeces]
-    LOG_G = LOG_G[good_indeces]
-    FE_H = FE_H[good_indeces]
-    C_FE = C_FE[good_indeces]
-    spectrum = spectrum[good_indeces]
-
-    return IDW.IDW (np.array([[Teff,logg,FeH,CFe]]), np.transpose(np.array([T_EFF,LOG_G,FE_H,C_FE])), spectrum, Shepard_parameter=params.Shepard_parameter)
+    if params.method == 'IDW':
+        return IDW.IDW (np.array([[Teff,logg,FeH,CFe]]), np.transpose(np.array([T_EFF,LOG_G,FE_H,C_FE])), spectrum, Shepard_parameter=params.Shepard_parameter, N_points=params.N_nearest_points)
+    elif params.method == 'Linear':
+        return Linear.Linear (np.array([[Teff,logg,FeH,CFe]]), np.transpose(np.array([T_EFF,LOG_G,FE_H,C_FE])), spectrum, N_points=params.N_nearest_points, method=params.GD_method)
 
 
 # Obtains multiple spectra from the spectral grid interpolation. The IDW method is used.
@@ -66,23 +70,25 @@ def get_interpolated_spectra (Teff_arr, logg_arr, FeH_arr, CFe_arr):
     T_EFF = f["/T_EFF"][:].flatten()
     LOG_G = f["/LOG_G"][:].flatten()
     FE_H = f["/FE_H"][:].flatten()
-    C_FE = f["/A_C"][:].flatten() - 8.43 - FE_H
+    C_FE = f["/A_C"][:].flatten()
     spectrum = f["/spectrum"][:]
     f.close()
     
-    good_indeces = []
-    for i in range(len(spectrum)):
-        if is_good(spectrum[i]):
-            good_indeces.append(i)
+    if params.remove_bad_spectra:
+        good_indeces = []
+        for i in range(len(spectrum)):
+            if is_good(spectrum[i]):
+                good_indeces.append(i)
+        T_EFF = T_EFF[good_indeces]
+        LOG_G = LOG_G[good_indeces]
+        FE_H = FE_H[good_indeces]
+        C_FE = C_FE[good_indeces]
+        spectrum = spectrum[good_indeces]
 
-    T_EFF = T_EFF[good_indeces]
-    LOG_G = LOG_G[good_indeces]
-    FE_H = FE_H[good_indeces]
-    C_FE = C_FE[good_indeces]
-    spectrum = spectrum[good_indeces]
-
-    spectra_list = []
-    for t, l, f, c in zip(Teff_arr, logg_arr, FeH_arr, CFe_arr):
-        spectra_list.append(IDW.IDW (np.array([[t,l,f,c]]), np.transpose(np.array([T_EFF,LOG_G,FE_H,C_FE])), spectrum, Shepard_parameter=params.Shepard_parameter))
-    return spectra_list
+    vars = np.transpose(np.array([T_EFF, LOG_G, FE_H, C_FE]))
+    new_vars = np.transpose(np.array([Teff_arr, logg_arr, FeH_arr, CFe_arr]))
+    if params.method == 'IDW':
+        return IDW.IDW (new_vars, vars, spectrum, Shepard_parameter=params.Shepard_parameter, N_points=params.N_nearest_points)
+    elif params.method == 'Linear':
+        return Linear.Linear (new_vars, vars, spectrum, N_points=params.N_nearest_points)
 

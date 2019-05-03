@@ -20,7 +20,7 @@ if __name__ == '__main__':
     f.create_dataset("/LOG_G", (1,1), dtype='f')
     f.create_dataset("/FE_H", (1,1), dtype='f')
     f.create_dataset("/C_FE", (1,1), dtype='f')
-    f.create_dataset("/spectrum", (1,7001), dtype='f')
+    f.create_dataset("/spectrum", (1,params.wavelength_range[1]-params.wavelength_range[0]+1), dtype='f')
 
     f["/T_EFF"][0] = Teff
     f["/LOG_G"][0] = logg
